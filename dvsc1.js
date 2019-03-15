@@ -10,13 +10,16 @@ function drawChart() {
     })
     continentsList = _.uniq(continentsList);
 
+
     // FUNCTIONS
     console.log(data)
     function getMinLat(continent) {
       let latList = [];
       data.forEach(function(el){
         if(findArea(el.lat, el.long) === continent) {
-          latList.push(el.lat)
+          if(el.lat !== ''){
+            latList.push(el.lat)
+          }
         }
       })
       return _.min(latList);
@@ -30,6 +33,8 @@ function drawChart() {
       })
       return _.max(latList);
     }
+
+    // console.log(getMinLat('North America'))
 
     // CONST LIST
     const continents = continentsList;
@@ -51,21 +56,17 @@ function drawChart() {
     const minLatAnt = getMinLat('Antarctica');
     const maxLatAnt = getMaxLat('Antarctica');
 
-    console.log(continents)
-
-    console.log(getMinLat('Europe'))
-    console.log(getMaxLat('Europe'))
-
+    console.log(minLatNAm);
     // CHART
-    const width = window.innerWidth * .9;
-    const height = window.innerHeight;
+    const width = window.innerWidth;
+    const height = 500;
     let svg = d3.select('#chart').append('svg')
       .attr('width', width)
       .attr('height', height);
 
     // SCALES
     const xScaleNAm = d3.scaleLinear()
-      .range([0, (width - 60)/continents.length]) // padding 40 + offset 20
+      .range([5, (width - 60)/(continents.length -1)]) // padding 40 + offset 20
       .domain([minLatNAm, maxLatNAm]);
 
     const xScaleEU = d3.scaleLinear()
@@ -93,8 +94,8 @@ function drawChart() {
       .domain([minLatAnt, maxLatAnt]);
 
     const yScale = d3.scaleLinear()
-      .range([0, height - 60]) // padding 40 + offset 20
-      .domain([minScore, maxScore]);
+      .range([0, height]) // padding 40 + offset 20
+      .domain([0, 8]); // for some reason
 
       // GROUPS BY CONTINENTS
       continents.map(el => {
@@ -102,6 +103,21 @@ function drawChart() {
           svg.append('g').attr('id', 'group-' + el.replace(' ', '-').toLowerCase());
         }
       });
+
+      // DRAW DATA POINTS NORTH AMERICA
+      svg.select('#group-north-america').selectAll('circle')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('cx', function(data) {
+          return xScaleNAm(data.lat)
+        })
+        .attr('cy', function(data) {
+          return yScale(data.data)
+        })
+        .attr('r', 10)
+        .style('fill', colors[0])
+        .style('fill-opacity', 0.4);
 
   })
 }
