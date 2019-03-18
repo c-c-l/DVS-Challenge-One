@@ -1,3 +1,7 @@
 svg {
   padding: 20px 40px;
 }
+.cont-arc {
+  fill: #fff;
+  stroke: #444;
+}
