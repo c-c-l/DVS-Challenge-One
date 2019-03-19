@@ -45,11 +45,11 @@ function drawChart() {
 
     function getPath(continent) {
       let id = continent.toLowerCase().replace(' ', '-');
-      let pathData = svg.select('#contArc-' + id).attr('d').split(',');
-      let midPointOfBase = getMidPoint(parseFloat(pathData[3]), parseFloat(pathData[6]), parseFloat(pathData[1]), parseFloat(pathData[7]));
-      svg.append('line').attr('x1', 0).attr('x2', 0).attr('y1', midPointOfBase[0]).attr('y2', midPointOfBase[1])
+      let pathData = svg.select(' #contArc-' + id).attr('d').split(',');
+      let firstPoint = pathData[0].replace('M', '');
+      let midPointOfBase = getMidPoint(parseFloat(firstPoint), parseFloat(pathData[6]), parseFloat(pathData[1]), parseFloat(pathData[7]));
       let path = {
-        d : { x: parseFloat(pathData[0]), y: parseFloat(pathData[1])},
+        d : {x: parseFloat(firstPoint), y: parseFloat(pathData[1])},
         v : {x: parseFloat(pathData[6]), y: parseFloat(pathData[7])},
         s : {x: parseFloat(pathData[3]), y: parseFloat(pathData[4])},
         m : {x: parseFloat(midPointOfBase[0]), y: parseFloat(midPointOfBase[1])}
@@ -58,35 +58,35 @@ function drawChart() {
     }
 
     function getXScale(continent, value) {
-      if(findArea(data.lat, data.long) === continent) {
-        let scalesData = getPath(continent);
-        if (value === 'data') {
-          let xScale = d3.scaleLinear()
-            .range([scalesData.s.x , scalesData.s.x])
+      let scalesData = getPath(continent);
+      if (value === 'data') {
+            let xScale = d3.scaleLinear()
+            .range([scalesData.s.x , scalesData.d.x])
             .domain([0, 5]);
-          return xScale;
-        }
-        else if (value === 'visualization') {
-          let xScale = d3.scaleLinear()
+            return xScale;
+          }
+          else if (value === 'visualization') {
+            let xScale = d3.scaleLinear()
             .range([scalesData.s.x, scalesData.v.x])
             .domain([0, 5])
-          return xScale;
-        }
-        else {
-          let xScale = d3.scaleLinear()
+            return xScale;
+          }
+          else {
+            let xArr = [scalesData.s.x, scalesData.m.x]
+            let minX = _.min(xArr);
+            let maxX = _.max(xArr);
+            let xScale = d3.scaleLinear()
             .range([scalesData.s.x, scalesData.m.x])
             .domain([0, 5])
-          return xScale;
-        }
-      }
+            return xScale;
+          }
     }
 
     function getYScale(continent, value) {
-      if(findArea(data.lat, data.long) === continent) {
         let scalesData = getPath(continent);
         if (value === 'data') {
           let yScale = d3.scaleLinear()
-            .range([scalesData.s.y , scalesData.d.y])
+            .range([scalesData.s.y, scalesData.d.y])
             .domain([0, 5]);
           return yScale;
         }
@@ -97,49 +97,60 @@ function drawChart() {
           return yScale;
         }
         else {
+          let yArr = [scalesData.s.y, scalesData.m.y]
+          let minY = _.min(yArr);
+          let maxY = _.max(yArr);
           let yScale = d3.scaleLinear()
             .range([scalesData.s.y, scalesData.m.y])
             .domain([0, 5])
           return yScale;
         }
-      }
     }
 
     function addLines(continent, data) {
       let id = continent.toLowerCase().replace(' ', '-');
-        let group = svg.append('g').attr('id', 'group-' + id);
-        group.selectAll('polygon')
+      let idx = continents.indexOf(continent);
+      let group = svg.append('g').attr('id', 'group-' + id);
+      let p = getPath(continent)
+      group.append('line').attr('x1',0).attr('x2', p.m.x).attr('y1', 0).attr('y2', p.m.y).style('stroke', '#9E9E9E');
+      data.forEach(function(datum, i) {
+          group.selectAll('polygon')
           .data(data)
           .enter()
           .append('polygon')
           .attr('points', function(d) {
-            if(findArea(d.lat, d.long) === continent) {
-              let dataX = getXScale(continent, 'data');
-              let dataY = getYScale(continent, 'data');
-              let vizX = getXScale(continent, 'visualization');
-              let vizY = getYScale(continent, 'visualization');
-              let socX = getXScale(continent, 'society');
-              let socY = getYScale(continent, 'society');
-              return dataX(d.data) + ',' + dataY(d.data) + ' ' +
-                vizX(parseFloat(d.visualization)) + ',' + vizY(d.visualization) + ' ' +
+              if(findArea(d.lat, d.long) === continent) {
+                let dataX = getXScale(continent, 'data');
+                let dataY = getYScale(continent, 'data');
+                let vizX = getXScale(continent, 'visualization');
+                let vizY = getYScale(continent, 'visualization');
+                let socX = getXScale(continent, 'society');
+                let socY = getYScale(continent, 'society');
+                return dataX(d.data) + ',' + dataY(d.data) + ' ' +
+                  vizX(parseFloat(d.visualization)) + ',' + vizY(d.visualization) + ' ' +
                 socX(parseFloat(d.society)) + ',' + socY(d.society);
               }
           })
-          .style('fill', 'none')
-          .style('stroke', colors[0])
-          .style('stroke-opacity', 0.5);
+          .style('fill', colors[idx])
+          .style('fill-opacity', function() {
+            // Display better for continents with a lot of points
+            if(idx === 1 || idx === 2) {
+              return 0.05;
+            }
+            else {
+              return 0.1;
+            }
+          })
+          .style('stroke', 'none')
+          .style('stroke-opacity', 0.7);
+      })
     }
-
-
-
-    // console.log(getMinLat('North America'))
 
     // CONST LIST
     const continents = continentsList;
-    const colors = ['#3c6382', '#079992', '#f6b93b', '#b71540', '#ccc', '#ff6b81', '#ffa502', '#22a6b3']
+    const colors = ['#F5D963','#B6D46A','#7CC880','#4EB896','#40A3A4','#558CA4','#6E7394','#7C5B78'];
     const minScore = 0;
     const maxScore = 5;
-    console.log(continents)
 
 
     // CHART
@@ -155,13 +166,12 @@ function drawChart() {
 
     const arc = d3.arc()
       .innerRadius(0)
-      .outerRadius(width/2 + 30);
+      .outerRadius(width/2 + 10);
 
     const angle = 360/continents.length; // 360 deg / len of benef
 
     const pie = d3.pie()
       .value(function(d, i) {
-        console.log(angle)
         return angle;
       })
       .sort(null);
@@ -172,7 +182,7 @@ function drawChart() {
       .data(pie(continents))
       .enter().append('path')
       .classed('cont-arc', true)
-      .attr('id', function(d, i){ console.log(d); return 'contArc-'+ d.data.toLowerCase()})
+      .attr('id', function(d, i){ return 'contArc-'+ d.data.toLowerCase().replace(' ', '-')})
       .attr('d', arc);
 
    // Append continent name
@@ -181,31 +191,22 @@ function drawChart() {
        .enter().append("text")
        .attr("class", "continent-name")
        .append("textPath")
-       .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase();})
-       .text(function(d){return d;});
+       .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase().replace(' ', '-');})
+       .text(function(d){return d})
+       .style('fill', function(d) {
+         let idx = continents.indexOf(d);
+         return colors[idx]
+       });
 
-    // svg.append('polygon').attr('points', '0,0 0,-495 350,-350').style('fill', '#82ccdd').style('fill-opacity', 0.5)
-    // svg.append('polygon').attr('points', '0,0 0,-495 175, -422.5').style('fill', '#b71540').style('fill-opacity', 0.5)
-
-    // getPath('other');
     addLines('Other', data);
+    addLines('North America', data);
     addLines('Europe', data);
+    addLines('South America', data);
+    addLines('Antarctica', data);
+    addLines('Asia', data);
+    addLines('Africa', data);
+    addLines('Oceania', data);
 
-      // GROUPS BY CONTINENTS
-      // continents.map(el => {
-      //   if(el !== 'Other') {
-      //     svg.append('g').attr('id', 'group-' + el.replace(' ', '-').toLowerCase());
-      //   }
-      // });
-
-      // DRAW DATA POINTS
-      // points('North America');
-      // points('Europe');
-      // points('South America');
-      // points('Asia');
-      // points('Africa');
-      // points('Oceania');
-      // points('Antarctica');
   })
 }
 // Code from https://github.com/Low-power

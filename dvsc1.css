@@ -1,7 +1,16 @@
+html {
+  font-family: 'Thasadith', sans-serif;
+}
 svg {
   padding: 20px 40px;
 }
 .cont-arc {
   fill: #fff;
-  stroke: #444;
+}
+.continent-name {
+  font-size: 20px;
+  font-weight: bold;
+}
+path {
+  stroke: 'none';
 }
