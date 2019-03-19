@@ -112,7 +112,6 @@ function drawChart() {
       let idx = continents.indexOf(continent);
       let group = svg.append('g').attr('id', 'group-' + id);
       let p = getPath(continent)
-      group.append('line').attr('x1',0).attr('x2', p.m.x).attr('y1', 0).attr('y2', p.m.y).style('stroke', '#9E9E9E');
       data.forEach(function(datum, i) {
           group.selectAll('polygon')
           .data(data)
@@ -132,18 +131,16 @@ function drawChart() {
               }
           })
           .style('fill', colors[idx])
-          .style('fill-opacity', function() {
-            // Display better for continents with a lot of points
-            if(idx === 1 || idx === 2) {
-              return 0.05;
-            }
-            else {
-              return 0.1;
-            }
-          })
+          .style('fill-opacity', 0.1)
           .style('stroke', 'none')
           .style('stroke-opacity', 0.7);
       })
+      let lineS = group.append('line').attr('x1',0).attr('x2', p.m.x).attr('y1', 0).attr('y2', p.m.y).style('stroke', '#b71540').style('stroke-opacity', 0.25);
+      svg.append('text').attr('x', p.m.x + 10).attr('y', p.m.y + 10).style('fill', '#b71540').text('society');
+      svg.append('text').attr('x', p.d.x + 10).attr('y', p.d.y + 10).style('fill', '#f6b93b').text('data');
+      svg.append('text').attr('x', p.v.x).attr('y', p.v.y -10).style('fill', '#079992').text('visualization');
+      let lineD = group.append('line').attr('x1',0).attr('x2', p.d.x).attr('y1', 0).attr('y2', p.d.y).style('stroke', '#f6b93b').style('stroke-opacity', 1);
+      let lineV = group.append('line').attr('x1',0).attr('x2', p.v.x).attr('y1', 0).attr('y2', p.v.y).style('stroke', '#079992').style('stroke-opacity', 1);
     }
 
     // CONST LIST
@@ -191,7 +188,8 @@ function drawChart() {
        .enter().append("text")
        .attr("class", "continent-name")
        .append("textPath")
-       .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase().replace(' ', '-');})
+       .attr("startOffset","50px")
+       .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase().replace(' ', '-')})
        .text(function(d){return d})
        .style('fill', function(d) {
          let idx = continents.indexOf(d);
