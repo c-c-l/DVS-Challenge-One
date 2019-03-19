@@ -33,7 +33,6 @@ function drawChart() {
       return _.max(latList);
     }
 
-    // Pythagorean theorem application to get the line length
     // x1, x2, y1, y2 : numbers  coords of the line
     function getMidPoint(x1, x2, y1, y2) {
       let points = [];
@@ -44,139 +43,104 @@ function drawChart() {
       return points;
     }
 
-    function getScale(continent, scaleValue) {
-      let path = svg.select('#contArc-' + continent.toLowerCase()).attr('d');
-      path = path.split(',');
-      console.log(path)
-      if(scaleValue === 'data') {
-        let xScale = d3.scaleLinear()
-          .range([0, parseFloat(path[1])])
-          .domain([0, 5]);
-        return xScale;
-      }
-      else if (scaleValue === 'visualization') {
-        let xScale = d3.scaleLinear()
-          .range([parseFloat(path[6]), parseFloat(path[7])])
-          .domain([0, 5]);
-        return xScale;
-      }
-      else {
-        // Society
-        let midPoint = getMidPoint(parseFloat(path[6]),
-          parseFloat(path[3]),
-          parseFloat(path[7]),
-          parseFloat(path[1]));
-        let xScale = d3.scaleLinear()
-          .range([parseFloat(midPoint[0]), parseFloat(midPoint[1])])
-          .domain([0, 5]);
-        return xScale;
+    function getPath(continent) {
+      let id = continent.toLowerCase().replace(' ', '-');
+      let pathData = svg.select('#contArc-' + id).attr('d').split(',');
+      let midPointOfBase = getMidPoint(parseFloat(pathData[3]), parseFloat(pathData[6]), parseFloat(pathData[1]), parseFloat(pathData[7]));
+      svg.append('line').attr('x1', 0).attr('x2', 0).attr('y1', midPointOfBase[0]).attr('y2', midPointOfBase[1])
+      let path = {
+        d : { x: parseFloat(pathData[0]), y: parseFloat(pathData[1])},
+        v : {x: parseFloat(pathData[6]), y: parseFloat(pathData[7])},
+        s : {x: parseFloat(pathData[3]), y: parseFloat(pathData[4])},
+        m : {x: parseFloat(midPointOfBase[0]), y: parseFloat(midPointOfBase[1])}
+      };
+      return path;
+    }
+
+    function getXScale(continent, value) {
+      if(findArea(data.lat, data.long) === continent) {
+        let scalesData = getPath(continent);
+        if (value === 'data') {
+          let xScale = d3.scaleLinear()
+            .range([scalesData.s.x , scalesData.s.x])
+            .domain([0, 5]);
+          return xScale;
+        }
+        else if (value === 'visualization') {
+          let xScale = d3.scaleLinear()
+            .range([scalesData.s.x, scalesData.v.x])
+            .domain([0, 5])
+          return xScale;
+        }
+        else {
+          let xScale = d3.scaleLinear()
+            .range([scalesData.s.x, scalesData.m.x])
+            .domain([0, 5])
+          return xScale;
+        }
       }
     }
-    function addData(continent) {
-      let id = continent.toLowerCase().replace(' ', '-')
-      let xScale;
-      switch(continent) {
-        case 'North America':
-          xScale = xScaleNAm;
-          break;
-        case 'Europe':
-          xScale = xScaleEU;
-          break
-        case 'South America':
-          xScale = xScaleSAm;
-          break;
-        case 'Asia':
-          xScale = xScaleAs;
-          break;
-        case 'Africa':
-          xScale = xScaleAfr;
-        case 'Oceania':
-          xScale = xScaleOce;
-          break;
-        default:
-          xScale = xScaleAnt;
+
+    function getYScale(continent, value) {
+      if(findArea(data.lat, data.long) === continent) {
+        let scalesData = getPath(continent);
+        if (value === 'data') {
+          let yScale = d3.scaleLinear()
+            .range([scalesData.s.y , scalesData.d.y])
+            .domain([0, 5]);
+          return yScale;
+        }
+        else if (value === 'visualization') {
+          let yScale = d3.scaleLinear()
+            .range([scalesData.s.y, scalesData.v.y])
+            .domain([0, 5])
+          return yScale;
+        }
+        else {
+          let yScale = d3.scaleLinear()
+            .range([scalesData.s.y, scalesData.m.y])
+            .domain([0, 5])
+          return yScale;
+        }
       }
-
-      // let xScale =
-      // svg.select('#group-'+id).append('g').attr('id', 'group-'+ id +'-data');
-      // svg.select('#group-'+ id +'-data').selectAll('circle')
-      //   .data(data)
-      //   .enter()
-      //   .append('circle')
-      //   .attr('cx', function(data) {
-      //     if(findArea(data.lat,data.long) === continent) {
-      //       return xScale(data.lat)
-      //     }
-      //   })
-      //   .attr('cy', function(data) {
-      //     if(findArea(data.lat,data.long) === continent) {
-      //       return yScale(data.data)
-      //     }
-      //   })
-      //   .attr('r', 10)
-      //   .style('fill', colors[0])
-      //   .style('fill-opacity', 0.1);
-
-      // svg.select('#group-'+ id).append('g').attr('id', 'group-'+ id +'-viz');
-      // svg.select('#group-'+ id +'-viz').selectAll('circle')
-      //   .data(data)
-      //   .enter()
-      //   .append('circle')
-      //   .attr('cx', function(data) {
-      //     if(findArea(data.lat,data.long) === continent) {
-      //       return xScale(data.lat)
-      //     }
-      //   })
-      //   .attr('cy', function(data) {
-      //     if(findArea(data.lat,data.long) === continent) {
-      //       return yScale(data.visualization)
-      //     }
-      //   })
-      //   .attr('r', 9)
-      //   .style('fill', colors[1])
-      //   .style('fill-opacity', 0.1);
-    //
-    //   svg.select('#group-'+ id).append('g').attr('id', 'group-'+ id +'-society');
-    //   svg.select('#group-'+ id +'-society').selectAll('circle')
-    //     .data(data)
-    //     .enter()
-    //     .append('circle')
-    //     .attr('cx', function(data) {
-    //       if(findArea(data.lat,data.long) === continent) {
-    //         return xScale(data.lat)
-    //       }
-    //     })
-    //     .attr('cy', function(data) {
-    //       if(findArea(data.lat,data.long) === continent) {
-    //         return yScale(data.society)
-    //       }
-    //     })
-    //     .attr('r', 8)
-    //     .style('fill', colors[2])
-    //     .style('fill-opacity', 0.1);
     }
+
+    function addLines(continent, data) {
+      let id = continent.toLowerCase().replace(' ', '-');
+        let group = svg.append('g').attr('id', 'group-' + id);
+        group.selectAll('polygon')
+          .data(data)
+          .enter()
+          .append('polygon')
+          .attr('points', function(d) {
+            if(findArea(d.lat, d.long) === continent) {
+              let dataX = getXScale(continent, 'data');
+              let dataY = getYScale(continent, 'data');
+              let vizX = getXScale(continent, 'visualization');
+              let vizY = getYScale(continent, 'visualization');
+              let socX = getXScale(continent, 'society');
+              let socY = getYScale(continent, 'society');
+              return dataX(d.data) + ',' + dataY(d.data) + ' ' +
+                vizX(parseFloat(d.visualization)) + ',' + vizY(d.visualization) + ' ' +
+                socX(parseFloat(d.society)) + ',' + socY(d.society);
+              }
+          })
+          .style('fill', 'none')
+          .style('stroke', colors[0])
+          .style('stroke-opacity', 0.5);
+    }
+
+
 
     // console.log(getMinLat('North America'))
 
     // CONST LIST
     const continents = continentsList;
-    const colors = ['#079992', '#f6b93b', '#b71540', '#ccc']
+    const colors = ['#3c6382', '#079992', '#f6b93b', '#b71540', '#ccc', '#ff6b81', '#ffa502', '#22a6b3']
     const minScore = 0;
     const maxScore = 5;
-    const minLatNAm = getMinLat('North America');
-    const maxLatNAm = getMaxLat('North America');
-    const minLatEU = getMinLat('Europe');
-    const maxLatEU = getMaxLat('Europe');
-    const minLatSAm = getMinLat('South America');
-    const maxLatSAm = getMaxLat('South America');
-    const minLatAs = getMinLat('Asia');
-    const maxLatAs = getMaxLat('Asia');
-    const minLatOce = getMinLat('Oceania');
-    const maxLatOce = getMaxLat('Oceania');
-    const minLatAfr = getMinLat('Africa');
-    const maxLatAfr = getMaxLat('Africa');
-    const minLatAnt = getMinLat('Antarctica');
-    const maxLatAnt = getMaxLat('Antarctica');
+    console.log(continents)
+
 
     // CHART
     const totalWidth = window.innerHeight;
@@ -220,47 +184,12 @@ function drawChart() {
        .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase();})
        .text(function(d){return d;});
 
-    svg.append('polygon').attr('points', '0,0 0,-495 350,-350').style('fill', '#82ccdd').style('fill-opacity', 0.5)
-    svg.append('polygon').attr('points', '0,0 0,-495 125, -845').style('fill', '#b71540').style('fill-opacity', 0.5)
+    // svg.append('polygon').attr('points', '0,0 0,-495 350,-350').style('fill', '#82ccdd').style('fill-opacity', 0.5)
+    // svg.append('polygon').attr('points', '0,0 0,-495 175, -422.5').style('fill', '#b71540').style('fill-opacity', 0.5)
 
-    console.log(getScale('Other', 'society'));
-    // SCALES
-    console.log(continents)
-    const xScaleNAm = d3.scaleLinear()
-      .range([0,  (width - 60) / continents.length])// padding 40 + offset 20
-      .domain([minLatNAm, maxLatNAm]);
-
-    const yScaleNAm= d3.scaleLinear()
-      .range([0, height])
-      .domain([minLatNAm, maxLatNAm]);
-
-    const xScaleEU = d3.scaleLinear()
-      .range([(width - 60)/continents.length, ((width - 60)/continents.length)*2]) // padding 40 + offset 20
-      .domain([minLatEU, maxLatEU]);
-
-    const xScaleSAm = d3.scaleLinear()
-      .range([((width - 60)/continents.length)*2, ((width - 60)/continents.length)*3]) // padding 40 + offset 20
-      .domain([minLatSAm, maxLatSAm]);
-
-    const xScaleAs = d3.scaleLinear()
-      .range([((width - 60)/continents.length)*3, ((width - 60)/continents.length)*4]) // padding 40 + offset 20
-      .domain([minLatAs, maxLatAs]);
-
-    const xScaleOce = d3.scaleLinear()
-      .range([((width - 70)/continents.length)*4, ((width - 60)/continents.length)*5]) // padding 40 + offset 20
-      .domain([minLatOce, maxLatOce]);
-
-    const xScaleAfr = d3.scaleLinear()
-      .range([((width - 60)/continents.length)*5, ((width - 60)/continents.length)*6]) // padding 40 + offset 20
-      .domain([minLatAfr, maxLatAfr]);
-
-    const xScaleAnt = d3.scaleLinear()
-      .range([((width - 60)/continents.length)*6, ((width - 60)/continents.length)*7]) // padding 40 + offset 20
-      .domain([minLatAnt, maxLatAnt]);
-
-    const yScale = d3.scaleLinear()
-      .range([0, height]) // padding 40 + offset 20
-      .domain([0, 10]); // for some reason
+    // getPath('other');
+    addLines('Other', data);
+    addLines('Europe', data);
 
       // GROUPS BY CONTINENTS
       // continents.map(el => {
