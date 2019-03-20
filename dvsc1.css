@@ -8,8 +8,10 @@ svg {
   fill: #fff;
 }
 .continent-name {
-  font-size: 20px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 26px;
   font-weight: bold;
+  text-transform: uppercase;
 }
 path {
   stroke: 'none';

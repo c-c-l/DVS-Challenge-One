@@ -112,13 +112,11 @@ function drawChart() {
       let idx = continents.indexOf(continent);
       let group = svg.append('g').attr('id', 'group-' + id);
       let p = getPath(continent)
-      data.forEach(function(datum, i) {
           group.selectAll('polygon')
-          .data(data)
+          .data(data.filter(function(d) { if(findArea(d.lat, d.long) === continent) {return d}})) // Filter for the current continent
           .enter()
           .append('polygon')
           .attr('points', function(d) {
-              if(findArea(d.lat, d.long) === continent) {
                 let dataX = getXScale(continent, 'data');
                 let dataY = getYScale(continent, 'data');
                 let vizX = getXScale(continent, 'visualization');
@@ -128,19 +126,48 @@ function drawChart() {
                 return dataX(d.data) + ',' + dataY(d.data) + ' ' +
                   vizX(parseFloat(d.visualization)) + ',' + vizY(d.visualization) + ' ' +
                 socX(parseFloat(d.society)) + ',' + socY(d.society);
-              }
           })
           .style('fill', colors[idx])
           .style('fill-opacity', 0.1)
           .style('stroke', 'none')
           .style('stroke-opacity', 0.7);
-      })
-      let lineS = group.append('line').attr('x1',0).attr('x2', p.m.x).attr('y1', 0).attr('y2', p.m.y).style('stroke', '#b71540').style('stroke-opacity', 0.25);
-      svg.append('text').attr('x', p.m.x + 10).attr('y', p.m.y + 10).style('fill', '#b71540').text('society');
-      svg.append('text').attr('x', p.d.x + 10).attr('y', p.d.y + 10).style('fill', '#f6b93b').text('data');
-      svg.append('text').attr('x', p.v.x).attr('y', p.v.y -10).style('fill', '#079992').text('visualization');
-      let lineD = group.append('line').attr('x1',0).attr('x2', p.d.x).attr('y1', 0).attr('y2', p.d.y).style('stroke', '#f6b93b').style('stroke-opacity', 1);
-      let lineV = group.append('line').attr('x1',0).attr('x2', p.v.x).attr('y1', 0).attr('y2', p.v.y).style('stroke', '#079992').style('stroke-opacity', 1);
+      group.append('g').classed('line-society', true).append('path').attr('id', 'societyLine-' + idx).attr('d', 'M0,0' + 'L' + p.m.x + ',' + p.m.y).style('stroke', '#fff').style('stroke-opacity', 0);
+      group.append('text').classed('continent-name', true).append('textPath').attr('href', '#societyLine-' + idx).attr('startOffset', '150px')
+        .text(continent).style('fill', '#fff').style('fill-opacity', 0.4);
+        legends(idx);
+    }
+    function legends(idx) {
+      let p = getPath(continents[idx]);
+      console.log(continents[idx])
+      console.log(p)
+      svg.select('g.line-society').append('path').attr('id', 'legendLine-' + idx).attr('d', function() {
+        let x1 = p.d.x;
+        let x2 = p.v.x;
+        let y1 = p.d.y;
+        let y2 = p.v.y;
+        if((x1 > 0) && (x2 > 0) && (y1 <= 0)) {
+          x1 = x1 + 5;
+          x2 = x2 + 5;
+          y1 = y1 - 5;
+          y2 = y2 - 5;
+        }
+        else if((y1 > 0) && (y2 > 0)) {
+          x1 = x1 - 5;
+          x2 = x2 - 5;
+          y1 = y1 + 5;
+          y2 = y2 + 5;
+        }
+        else if ((x1 < 0) && (x2 < 0) && (y2 < 0)) {
+          x1 = x1 - 5;
+          x2 = x2 - 5;
+          y1 = y1 - 5;
+          y2 = y2 - 5;
+        }
+        return 'M' + x1 + ',' + y1 + 'L' + x2 +',' + y2;
+      });
+      svg.select('g.line-society').append('text').append('textPath').attr('href', '#legendLine-' + idx).attr('startOffset', '20px').style('fill', '#f6b93b').style('fill-opacity', 1).text('data');
+      svg.select('g.line-society').append('text').append('textPath').attr('href', '#legendLine-' + idx).attr('startOffset', '160px').style('fill', '#b71540').style('fill-opacity', 0.7).text('society');
+      svg.select('g.line-society').append('text').append('textPath').attr('href', '#legendLine-' + idx).attr('startOffset', '280px').style('fill', '#079992').style('fill-opacity', 0.9).text('visualization');
     }
 
     // CONST LIST
@@ -183,18 +210,18 @@ function drawChart() {
       .attr('d', arc);
 
    // Append continent name
-   svg.selectAll(".continentName")
-       .data(continents)
-       .enter().append("text")
-       .attr("class", "continent-name")
-       .append("textPath")
-       .attr("startOffset","50px")
-       .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase().replace(' ', '-')})
-       .text(function(d){return d})
-       .style('fill', function(d) {
-         let idx = continents.indexOf(d);
-         return colors[idx]
-       });
+   // svg.selectAll(".continentName")
+   //     .data(continents)
+   //     .enter().append("text")
+   //     .attr("class", "continent-name")
+   //     .append("textPath")
+   //     .attr("startOffset","175px")
+   //     .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase().replace(' ', '-')})
+   //     .text(function(d){return d})
+   //     .style('fill', function(d) {
+   //       let idx = continents.indexOf(d);
+   //       return colors[idx]
+   //     });
 
     addLines('Other', data);
     addLines('North America', data);
@@ -204,6 +231,7 @@ function drawChart() {
     addLines('Asia', data);
     addLines('Africa', data);
     addLines('Oceania', data);
+    // legends();
 
   })
 }
