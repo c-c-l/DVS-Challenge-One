@@ -33,6 +33,7 @@ function drawChart() {
       return _.max(latList);
     }
 
+    // Get the mid point of a line
     // x1, x2, y1, y2 : numbers  coords of the line
     function getMidPoint(x1, x2, y1, y2) {
       let points = [];
@@ -43,6 +44,8 @@ function drawChart() {
       return points;
     }
 
+    // Get the path of slice representing the continent
+    // continent : strg
     function getPath(continent) {
       let id = continent.toLowerCase().replace(' ', '-');
       let pathData = svg.select(' #contArc-' + id).attr('d').split(',');
@@ -57,6 +60,7 @@ function drawChart() {
       return path;
     }
 
+    // Config xScale for chart
     function getXScale(continent, value) {
       let scalesData = getPath(continent);
       if (value === 'data') {
@@ -82,6 +86,7 @@ function drawChart() {
           }
     }
 
+    // Config yScale of the chart
     function getYScale(continent, value) {
         let scalesData = getPath(continent);
         if (value === 'data') {
@@ -107,6 +112,7 @@ function drawChart() {
         }
     }
 
+    // Draw the polygons and lines
     function addLines(continent, data) {
       let id = continent.toLowerCase().replace(' ', '-');
       let idx = continents.indexOf(continent);
@@ -134,8 +140,11 @@ function drawChart() {
       group.append('g').classed('line-society', true).append('path').attr('id', 'societyLine-' + idx).attr('d', 'M0,0' + 'L' + p.m.x + ',' + p.m.y).style('stroke', '#fff').style('stroke-opacity', 0);
       group.append('text').classed('continent-name', true).append('textPath').attr('href', '#societyLine-' + idx).attr('startOffset', '150px')
         .text(continent).style('fill', '#fff').style('fill-opacity', 0.4);
+        // add legends/captions text
         legends(idx);
     }
+
+    // Config the legends/captions text (data, visualisation, society)
     function legends(idx) {
       let p = getPath(continents[idx]);
       svg.select('g.line-society').append('path').attr('id', 'legendLine-' + idx).attr('d', function() {
@@ -227,6 +236,8 @@ function drawChart() {
     svg.select(' .text-info').append('text').classed('score-soc', true).attr('x', 0 - (width + 20) / 2).attr('y', 0 - (height - 140) / 2);
     svg.select(' .text-info').append('text').classed('soc-info', true).attr('x', 0 - (width - 170) / 2).attr('y', 0 - (height - 140) / 2);
     svg.select(' .text-info').style('opacity', 0);
+
+    // Display info on mouseover slice
     svg.selectAll(' .group-path')
       .on('mouseover', function() {
         let id = this.getAttribute('id').replace('groupPath-', '')
@@ -269,6 +280,7 @@ function drawChart() {
         svg.select(' .text-info').style('opacity', 1);
 
       })
+      // Hide info on mouse out
       .on('mouseout', function(){
         d3.select(this).selectAll('polygon').style('stroke-opacity', 0).style('fill-opacity', 0.1);
 
@@ -276,23 +288,18 @@ function drawChart() {
       });
 
 
+    // Make mini chart (super hardcoded)
+    miniChart.append('path').attr('d', 'M 50 250 L 150 50 L 250 150 Z').style('stroke', '#ccc').style('fill', 'none');
+    miniChart.append('text').attr('x', 100).attr('y', 50).text('data');
+    miniChart.append('text').attr('x', 255).attr('y', 150).text('visualization');
+    miniChart.append('text').attr('x', 0).attr('y', 250).text('society');
+    let midP = getMidPoint(150,250,50,150);
+    miniChart.append('path').attr('d', 'M 50 250 L ' + midP[0] + ' ' + midP[1] + ' Z').style('stroke', '#ccc').style('fill', 'none');
+    miniChart.append('line').attr('x1', 180).attr('y1', 100).attr('x2', 200).attr('y2', 100).style('stroke', '#ccc');
+    miniChart.append('line').attr('x1', 200).attr('y1', 120).attr('x2', 200).attr('y2', 100).style('stroke', '#ccc');
+    miniChart.append('text').attr('x', 210).attr('y', 90).text('score from 0 to 5').style('fill', '#777');
 
-   // Make mini chart (super hardcoded)
-   miniChart.append('path').attr('d', 'M 50 250 L 150 50 L 250 150 Z').style('stroke', '#ccc').style('fill', 'none');
-   miniChart.append('text').attr('x', 100).attr('y', 50).text('data');
-   miniChart.append('text').attr('x', 255).attr('y', 150).text('visualization');
-   miniChart.append('text').attr('x', 0).attr('y', 250).text('society');
-   let midP = getMidPoint(150,250,50,150);
-   miniChart.append('path').attr('d', 'M 50 250 L ' + midP[0] + ' ' + midP[1] + ' Z').style('stroke', '#ccc').style('fill', 'none');
-   miniChart.append('line').attr('x1', 180).attr('y1', 100).attr('x2', 200).attr('y2', 100).style('stroke', '#ccc');
-   miniChart.append('line').attr('x1', 200).attr('y1', 120).attr('x2', 200).attr('y2', 100).style('stroke', '#ccc');
-   miniChart.append('text').attr('x', 210).attr('y', 90).text('score from 0 to 5').style('fill', '#777');
-
-
-   // append line for data
-   // add ticks with score number
-   // add line for viz
-   // add line for soc
+    // Draw the polygons and lines for each continent
     addLines('Other', data);
     addLines('North America', data);
     addLines('Europe', data);
@@ -301,10 +308,10 @@ function drawChart() {
     addLines('Asia', data);
     addLines('Africa', data);
     addLines('Oceania', data);
-    // legends();
-
   })
 }
+
+// Get the continent depending on long and lat
 // Code from https://github.com/Low-power
 function findArea(lat, lng){
   if(lat <= -40){		// Data are from Daniel Pereira
