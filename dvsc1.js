@@ -110,7 +110,7 @@ function drawChart() {
     function addLines(continent, data) {
       let id = continent.toLowerCase().replace(' ', '-');
       let idx = continents.indexOf(continent);
-      let group = svg.append('g').attr('id', 'group-' + id);
+      let group = svg.select(' #groupPath-' + id).append('g').attr('id', 'group-' + id);
       let p = getPath(continent)
           group.selectAll('polygon')
           .data(data.filter(function(d) { if(findArea(d.lat, d.long) === continent) {return d}})) // Filter for the current continent
@@ -129,8 +129,8 @@ function drawChart() {
           })
           .style('fill', colors[idx])
           .style('fill-opacity', 0.1)
-          .style('stroke', 'none')
-          .style('stroke-opacity', 0.7);
+          .style('stroke', colors[idx])
+          .style('stroke-opacity', 0);
       group.append('g').classed('line-society', true).append('path').attr('id', 'societyLine-' + idx).attr('d', 'M0,0' + 'L' + p.m.x + ',' + p.m.y).style('stroke', '#fff').style('stroke-opacity', 0);
       group.append('text').classed('continent-name', true).append('textPath').attr('href', '#societyLine-' + idx).attr('startOffset', '150px')
         .text(continent).style('fill', '#fff').style('fill-opacity', 0.4);
@@ -138,8 +138,6 @@ function drawChart() {
     }
     function legends(idx) {
       let p = getPath(continents[idx]);
-      console.log(continents[idx])
-      console.log(p)
       svg.select('g.line-society').append('path').attr('id', 'legendLine-' + idx).attr('d', function() {
         let x1 = p.d.x;
         let x2 = p.v.x;
@@ -182,11 +180,16 @@ function drawChart() {
     const margin = {left: 20, top: 20, right: 20, bottom: 20};
     const width =  totalWidth - margin.left - margin.right;
 		const height =  totalWidth -  margin.top - margin.bottom;
+    const miniSize = 300;
     const svg = d3.select("#chart").append("svg")
       .attr("width", (width + margin.left + margin.right))
       .attr("height", (height + margin.top + margin.bottom))
 			.append("g").attr("class", "wrapper")
 			.attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
+    const miniChart = d3.select("#explanationChart").append("svg")
+        .attr("width", miniSize)
+        .attr("height", miniSize)
+  			.append("g").attr("class", "mini-wrapper");
 
     const arc = d3.arc()
       .innerRadius(0)
@@ -204,25 +207,92 @@ function drawChart() {
     // Draw arcs
     svg.selectAll(' .continentsArc')
       .data(pie(continents))
-      .enter().append('path')
+      .enter().append('g').classed('group-path', true).attr('id', function(d, i) {
+        return 'groupPath-' + d.data.toLowerCase().replace(' ', '-')
+      }).append('path')
       .classed('cont-arc', true)
       .attr('id', function(d, i){ return 'contArc-'+ d.data.toLowerCase().replace(' ', '-')})
       .attr('d', arc);
 
-   // Append continent name
-   // svg.selectAll(".continentName")
-   //     .data(continents)
-   //     .enter().append("text")
-   //     .attr("class", "continent-name")
-   //     .append("textPath")
-   //     .attr("startOffset","175px")
-   //     .attr("xlink:href",function(d,i){return "#contArc-"+ d.toLowerCase().replace(' ', '-')})
-   //     .text(function(d){return d})
-   //     .style('fill', function(d) {
-   //       let idx = continents.indexOf(d);
-   //       return colors[idx]
-   //     });
+    // Add info
+    svg.append('g').classed('text-info', true).append('text').attr('x', 0 - (width + 40) / 2).attr('y', 0 - (height + 50) / 2).text('Data for');
+    svg.select(' .text-info').append('text').classed('info-c-name', true).attr('x', 0 - (width - 70) / 2).attr('y', 0 - (height + 50) / 2);
+    svg.select(' .text-info').append('text').classed('number-members', true).attr('x', 0 - (width + 40) / 2).attr('y', 0 - (height + 10) / 2);
+    svg.select(' .text-info').append('text').classed('number-info', true).attr('x', 0 - (width - 240) / 2).attr('y', 0 - (height + 10) / 2);
+    svg.select(' .text-info').append('text').attr('x', 0 - (width + 40) / 2).attr('y', 0 - (height - 30) / 2).text('Mean score for :');
+    svg.select(' .text-info').append('text').classed('score-data', true).attr('x', 0 - (width + 20) / 2).attr('y', 0 - (height - 80) / 2);
+    svg.select(' .text-info').append('text').classed('data-info', true).attr('x', 0 - (width - 170) / 2).attr('y', 0 - (height - 80) / 2);
+    svg.select(' .text-info').append('text').classed('score-viz', true).attr('x', 0 - (width + 20) / 2).attr('y', 0 - (height - 110) / 2);
+    svg.select(' .text-info').append('text').classed('viz-info', true).attr('x', 0 - (width - 170) / 2).attr('y', 0 - (height - 110) / 2);
+    svg.select(' .text-info').append('text').classed('score-soc', true).attr('x', 0 - (width + 20) / 2).attr('y', 0 - (height - 140) / 2);
+    svg.select(' .text-info').append('text').classed('soc-info', true).attr('x', 0 - (width - 170) / 2).attr('y', 0 - (height - 140) / 2);
+    svg.select(' .text-info').style('opacity', 0);
+    svg.selectAll(' .group-path')
+      .on('mouseover', function() {
+        let id = this.getAttribute('id').replace('groupPath-', '')
+        // Get number of members
+        let splitContName = id.replace('-', ' ').split(' ');
+        for (var i = 0; i < splitContName.length; i++) {
+            splitContName[i] = splitContName[i].charAt(0).toUpperCase() + splitContName[i].substring(1);
+        }
+        let contName = splitContName.join(' ');
+        let nb = 0;
+        data.forEach(datum => {
+          if(findArea(datum.lat, datum.long) === contName) {
+            nb = nb + 1;
+          }
+        });
+        // Get mean scores
+        let dataM = 0;
+        let vizM = 0;
+        let socM = 0;
+        data.forEach(datum => {
+          if(findArea(datum.lat, datum.long) === contName) {
+            dataM = dataM + parseFloat(datum.data);
+            vizM = vizM + parseFloat(datum.visualization);
+            socM = socM + parseFloat(datum.society);
+          }
+        })
+        dataM = dataM / nb;
+        vizM = vizM / nb;
+        socM = socM / nb;
+        svg.select(' .info-c-name').text(contName);
+        svg.select(' .number-members').text('Number of members: ');
+        svg.select(' .number-info').text(nb);
+        svg.select(' .score-data').text('Data: ');
+        svg.select(' .data-info').text(dataM.toFixed(2));
+        svg.select(' .score-viz').text('Visualization: ');
+        svg.select(' .viz-info').text(vizM.toFixed(2));
+        svg.select(' .score-soc').text('Society: ');
+        svg.select(' .soc-info').text(socM.toFixed(2));
+        d3.select(this).selectAll('polygon').style('stroke-opacity', 1).style('fill-opacity', 0);
+        svg.select(' .text-info').style('opacity', 1);
 
+      })
+      .on('mouseout', function(){
+        d3.select(this).selectAll('polygon').style('stroke-opacity', 0).style('fill-opacity', 0.1);
+
+        svg.select(' .text-info').style('opacity', 0);
+      });
+
+
+
+   // Make mini chart (super hardcoded)
+   miniChart.append('path').attr('d', 'M 50 250 L 150 50 L 250 150 Z').style('stroke', '#ccc').style('fill', 'none');
+   miniChart.append('text').attr('x', 100).attr('y', 50).text('data');
+   miniChart.append('text').attr('x', 255).attr('y', 150).text('visualization');
+   miniChart.append('text').attr('x', 0).attr('y', 250).text('society');
+   let midP = getMidPoint(150,250,50,150);
+   miniChart.append('path').attr('d', 'M 50 250 L ' + midP[0] + ' ' + midP[1] + ' Z').style('stroke', '#ccc').style('fill', 'none');
+   miniChart.append('line').attr('x1', 180).attr('y1', 100).attr('x2', 200).attr('y2', 100).style('stroke', '#ccc');
+   miniChart.append('line').attr('x1', 200).attr('y1', 120).attr('x2', 200).attr('y2', 100).style('stroke', '#ccc');
+   miniChart.append('text').attr('x', 210).attr('y', 90).text('score from 0 to 5').style('fill', '#777');
+
+
+   // append line for data
+   // add ticks with score number
+   // add line for viz
+   // add line for soc
     addLines('Other', data);
     addLines('North America', data);
     addLines('Europe', data);
